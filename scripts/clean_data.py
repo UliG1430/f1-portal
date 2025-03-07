@@ -14,7 +14,7 @@ results_df = results_df[results_df["raceId"].isin(races_df["raceId"])]
 
 # --- Seleccionar columnas clave --- #
 races_df = races_df[["raceId", "year", "round", "circuitId", "name", "date"]]
-results_df = results_df[["resultId", "raceId", "driverId", "constructorId", "grid", "position", "points", "laps", "fastestLapTime", "fastestLapSpeed"]]
+results_df = results_df[["resultId", "raceId", "driverId", "constructorId", "grid", "position", "positionOrder", "points", "laps", "fastestLapTime", "fastestLapSpeed"]]
 circuits_df = circuits_df[["circuitId", "name", "location", "country", "lat", "lng", "alt"]]
 drivers_df = drivers_df[["driverId", "forename", "surname", "dob", "nationality"]]
 constructors_df = constructors_df[["constructorId", "name", "nationality"]]
