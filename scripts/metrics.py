@@ -27,11 +27,12 @@ def calcular_coeficiente_lluvia(df):
 
     # Calcular métricas por piloto
     df_pilotos_lluvia = df_lluvia.groupby("surname").agg(
-        total_puntos=("points", "sum"),  # Suma total de puntos obtenidos en lluvia
-        total_carreras=("raceId", "count"),  # Cantidad de carreras en lluvia
-        posicion_promedio=("positionOrder", "mean"),  # Posición promedio en lluvia
-        adelantamientos=("grid", lambda x: (x - df_lluvia["positionOrder"]).sum())  # Adelantamientos totales
+    total_puntos=("points", "sum"),  
+    total_carreras=("raceId", "count"),  
+    posicion_promedio=("position", "mean"),  
+    adelantamientos=("grid", lambda x: (x - df_lluvia["position"]).sum())  
     ).reset_index()
+
 
     # Calcular el coeficiente de rendimiento en lluvia (CRL)
     df_pilotos_lluvia["CRL"] = (

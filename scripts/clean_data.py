@@ -1,41 +1,78 @@
 import pandas as pd
 
 # --- Cargar datasets --- #
-races_df = pd.read_csv("data/raw/races.csv")
-results_df = pd.read_csv("data/raw/results.csv")
-weather_df = pd.read_csv("data/raw/weather.csv")
+f1_races = pd.read_csv("data/raw/races.csv")
+f1_results = pd.read_csv("data/raw/results.csv")
+f1_weather = pd.read_csv("data/raw/weather.csv")
 circuits_df = pd.read_csv("data/raw/circuits.csv")
 drivers_df = pd.read_csv("data/raw/drivers.csv")
 constructors_df = pd.read_csv("data/raw/constructors.csv")
 
-# --- Filtrar datos de 2018 a 2023 --- #
-races_df = races_df[(races_df["year"] >= 2018) & (races_df["year"] <= 2023)]
-results_df = results_df[results_df["raceId"].isin(races_df["raceId"])]
+# Filtrar solo las carreras entre 2018 y 2023
+f1_races = f1_races[(f1_races['year'] >= 2018) & (f1_races['year'] <= 2023)]
 
-# --- Seleccionar columnas clave --- #
-races_df = races_df[["raceId", "year", "round", "circuitId", "name", "date"]]
-results_df = results_df[["resultId", "raceId", "driverId", "constructorId", "grid", "position", "positionOrder", "points", "laps", "fastestLapTime", "fastestLapSpeed"]]
-circuits_df = circuits_df[["circuitId", "name", "location", "country", "lat", "lng", "alt"]]
-drivers_df = drivers_df[["driverId", "forename", "surname", "dob", "nationality"]]
-constructors_df = constructors_df[["constructorId", "name", "nationality"]]
+# Unir f1_results con f1_races para obtener Year y Round Number
+f1_results = f1_results.merge(f1_races[['raceId', 'year', 'round']], on='raceId', how='inner')
 
-# --- Limpiar y transformar datos --- #
-print(weather_df.columns)  # Lista todas las columnas del CSV
+# Eliminar duplicados en el dataset de clima
+f1_weather = f1_weather.drop_duplicates()
 
-# Renombrar columnas en weather_df para que coincidan con races_df
-weather_df.rename(columns={"Year": "year", "Round Number": "round"}, inplace=True)
+# Convertir nombres de columnas a minúsculas y estandarizar
+f1_weather.columns = f1_weather.columns.str.lower().str.replace(" ", "_")
+f1_results.columns = f1_results.columns.str.lower().str.replace(" ", "_")
+drivers_df.columns = drivers_df.columns.str.lower().str.replace(" ", "_")
+constructors_df.columns = constructors_df.columns.str.lower().str.replace(" ", "_")
 
-# Unir los datos de clima con las carreras usando "year" y "round"
-races_weather_df = races_df.merge(weather_df, on=["year", "round"], how="left")
+# --- 🔹 Corregir Lluvia: Si en algún momento de la carrera llovió, marcar toda la carrera como mojada ---
+f1_weather_grouped = f1_weather.groupby(['year', 'round_number']).agg({
+    'airtemp': 'mean',
+    'humidity': 'mean',
+    'pressure': 'mean',
+    'rainfall': lambda x: x.any(),  # Si en algún momento de la carrera llovió, marcar toda la carrera como True
+    'tracktemp': 'mean',
+    'winddirection': 'mean',
+    'windspeed': 'mean'
+}).reset_index()
 
-# --- Unir datasets --- #
-results_expanded_df = results_df.merge(drivers_df, on="driverId", how="left").merge(constructors_df, on="constructorId", how="left")
-final_df = results_expanded_df.merge(races_weather_df, on="raceId", how="left").merge(circuits_df, on="circuitId", how="left")
+# Fusionar datasets en base a year y round
+f1_merged = f1_results.merge(
+    f1_weather_grouped, 
+    left_on=['year', 'round'], 
+    right_on=['year', 'round_number'], 
+    how='inner'
+)
 
-# --- Guardar datasets limpios en la carpeta correspondiente --- #
-races_df.to_csv("data/clean/races_cleaned.csv", index=False)
-results_expanded_df.to_csv("data/clean/results_cleaned.csv", index=False)
-races_weather_df.to_csv("data/clean/races_weather_cleaned.csv", index=False)
-final_df.to_csv("data/clean/f1_final_dataset.csv", index=False)
+# --- Unir con datos de pilotos y constructores ---
+# Agregar nombres de pilotos
+f1_merged = f1_merged.merge(
+    drivers_df[['driverid', 'surname', 'forename', 'nationality']], 
+    on='driverid', 
+    how='left'
+)
 
-print("Archivos limpios y combinados guardados correctamente en data/clean/")
+# Agregar nombres de constructores
+f1_merged = f1_merged.merge(
+    constructors_df[['constructorid', 'name']], 
+    on='constructorid', 
+    how='left'
+)
+
+# Renombrar columnas para mayor claridad
+f1_merged.rename(columns={'surname': 'driver_surname', 'forename': 'driver_forename', 'name': 'constructor_name'}, inplace=True)
+
+# Verificar qué columnas existen antes de eliminarlas
+columns_to_drop = [col for col in ['raceid', 'round_number', 'time_y'] if col in f1_merged.columns]
+f1_merged = f1_merged.drop(columns=columns_to_drop)
+
+# Guardar el dataset limpio en la carpeta data/clean/
+output_path = "data/clean/f1_final_dataset.csv"
+f1_merged.to_csv(output_path, index=False)
+print(f"✅ Dataset final con nombres de pilotos y constructores guardado en {output_path}")
+
+# Mostrar primeras filas para verificar la fusión
+print("Datos fusionados de Clima y Resultados de F1:")
+print(f1_merged.head())
+
+# Explorar estructura final de los datos
+print("\nEstructura del dataset final:")
+print(f1_merged.info())
