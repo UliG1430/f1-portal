@@ -1,16 +1,16 @@
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
 
-DATA_PATH = "data/clean/f1_final_dataset.csv"
-
-# --- Cargar datos ---
+# --- 📥 Cargar datos ---
 def load_data():
-    """Carga el dataset de F1."""
-    df = pd.read_csv(DATA_PATH)
-    return df
+    """Carga las tablas de hechos y dimensiones."""
+    fact_results = pd.read_csv("data/clean/fact_results.csv")
+    dim_drivers = pd.read_csv("data/clean/dim_drivers.csv")
+    dim_teams = pd.read_csv("data/clean/dim_teams.csv")
+    dim_circuits = pd.read_csv("data/clean/dim_circuits.csv")  # ✅ Agregar esta línea
+    return fact_results, dim_drivers, dim_teams, dim_circuits  # ✅ Incluir dim_circuits en el return
 
-# --- Función para eliminar valores atípicos ---
+
+# --- 📌 Eliminar valores atípicos ---
 def remove_outliers(df, columns):
     """Elimina valores atípicos usando el rango intercuartil (IQR)."""
     for column in columns:
@@ -22,9 +22,9 @@ def remove_outliers(df, columns):
         df = df[(df[column] >= lower_bound) & (df[column] <= upper_bound)]
     return df
 
-# --- Función para filtrar datos ---
+# --- 📌 Función para filtrar datos ---
 def filter_data(df, year=None, driver=None, team=None):
-    """Filtra el dataset por año, piloto y equipo."""
+    """Filtra los datos por año, piloto o equipo."""
     if year:
         df = df[df["year"] == year]
     if driver and driver != "Todos":
@@ -32,53 +32,3 @@ def filter_data(df, year=None, driver=None, team=None):
     if team and team != "Todos":
         df = df[df["constructor_name"] == team]
     return df
-
-# --- Función para generar estadísticas descriptivas ---
-def get_statistics(df):
-    """Retorna estadísticas descriptivas del dataset."""
-    return df.describe()
-
-# --- Función para generar gráficos de distribución ---
-def plot_distributions(df):
-    """Genera gráficos de boxplot para analizar distribución de variables climáticas y puntos."""
-    fig, axes = plt.subplots(2, 3, figsize=(15, 10))
-
-    sns.boxplot(data=df, x='airtemp', ax=axes[0, 0])
-    axes[0, 0].set_title("Distribución de la Temperatura del Aire")
-
-    sns.boxplot(data=df, x='humidity', ax=axes[0, 1])
-    axes[0, 1].set_title("Distribución de la Humedad")
-
-    sns.boxplot(data=df, x='pressure', ax=axes[0, 2])
-    axes[0, 2].set_title("Distribución de la Presión Atmosférica")
-
-    sns.boxplot(data=df, x='tracktemp', ax=axes[1, 0])
-    axes[1, 0].set_title("Distribución de la Temperatura de la Pista")
-
-    sns.boxplot(data=df, x='windspeed', ax=axes[1, 1])
-    axes[1, 1].set_title("Distribución de la Velocidad del Viento")
-
-    sns.boxplot(data=df, x='points', ax=axes[1, 2])
-    axes[1, 2].set_title("Distribución de los Puntos")
-
-    plt.tight_layout()
-    plt.show()
-
-# --- Procesamiento principal ---
-if __name__ == "__main__":
-    df = load_data()
-
-    # Eliminar valores atípicos
-    columns_to_clean = ['airtemp', 'humidity', 'pressure', 'tracktemp', 'windspeed']
-    df_clean = remove_outliers(df, columns_to_clean)
-
-    # Guardar dataset limpio
-    df_clean.to_csv("data/clean/f1_cleaned_final.csv", index=False)
-    print("✅ Datos limpios guardados en 'data/clean/f1_cleaned_final.csv'")
-
-    # Mostrar estadísticas
-    print("\n🔹 Estadísticas descriptivas:")
-    print(get_statistics(df_clean))
-
-    # Mostrar gráficos
-    plot_distributions(df_clean)
