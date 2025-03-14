@@ -11,24 +11,30 @@ st.set_page_config(page_title="F1 Dashboard", layout="wide")
 # ==============================
 # 📥 **CARGAR LOS DATOS**
 # ==============================
-fact_results, dim_drivers, dim_teams, dim_circuits = load_data()  # ✅ Ahora incluye dim_circuits
-df = fact_results  # Solo tomamos la tabla de hechos
+fact_results, dim_drivers, dim_teams, dim_circuits = load_data()
 
+# 🔹 Fusionar `fact_results` con `dim_drivers` y `dim_teams`
+df = fact_results.merge(dim_drivers[['driverid', 'surname', 'forename', 'nationality']], on='driverid', how='left')
+df = df.merge(dim_teams[['constructorid', 'name']], on='constructorid', how='left')
+
+# 🔹 Renombrar columnas para mayor claridad
+df.rename(columns={'surname': 'driver_surname', 'forename': 'driver_forename', 'name': 'constructor_name'}, inplace=True)
 # 📌 Filtrar solo carreras principales (excluir Qualys y Sprint Races si existen en la base de datos)
 if "eventType" in df.columns:
     df = df[df["eventType"] == "Race"]
 elif "statusId" in df.columns:
     df = df[df["statusId"] != "Qualifying"]  # Ajustar según la estructura del dataset
 
-# ==============================
+## ==============================
 # 📌 **SIDEBAR: FILTROS**
 # ==============================
 st.sidebar.header("📌 Filtros de Carrera")
 selected_year = st.sidebar.selectbox("📅 Seleccionar Año", sorted(df["year"].unique(), reverse=True))
-selected_team = st.sidebar.selectbox("🛠️ Seleccionar Equipo", ["Todos"] + sorted(df["constructor_name"].unique()))
+selected_driver = st.sidebar.selectbox("🏁 Seleccionar Piloto", ["Todos"] + sorted(df["driver_surname"].dropna().unique()))
+selected_team = st.sidebar.selectbox("🛠️ Seleccionar Equipo", ["Todos"] + sorted(df["constructor_name"].dropna().unique()))
 
 # Aplicar filtros correctamente
-df_filtered = filter_data(fact_results, year=selected_year, team=selected_team)
+df_filtered = filter_data(df, year=selected_year, driver=selected_driver, team=selected_team)
 
 # ==============================
 # 🏁 **TÍTULO PRINCIPAL**
