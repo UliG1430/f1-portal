@@ -180,75 +180,6 @@ df_evolution = df.copy()  # Hacemos una copia para evitar el SettingWithCopyWarn
 # 🔹 Agregar columna de diferencia de posiciones
 df_evolution["pos_dif"] = df_evolution["grid"] - df_evolution["positionorder"]
 
-# 📊 **Evolución del Rendimiento de los Pilotos**
-st.subheader("📈 Evolución del Rendimiento de los Pilotos a lo Largo de los Años")
-
-df_pilots_evolution = df_evolution.groupby(["year", "driver_surname"])["points"].sum().reset_index()
-
-fig_pilots = px.line(df_pilots_evolution, x="year", y="points", color="driver_surname",
-                     labels={"year": "Año", "points": "Puntos Totales", "driver_surname": "Piloto"},
-                     title="📊 Evolución del Rendimiento de los Pilotos",
-                     markers=True)
-
-st.plotly_chart(fig_pilots, use_container_width=True, key="grafico_pilotos")
-
-
-# 📊 **Evolución del Rendimiento de los Equipos en Lluvia**
-st.subheader("📈 ¿Qué Equipos han Mejorado en Lluvia con los Años?")
-
-df_teams_evolution = df_evolution[df_evolution["rainfall"] == True].groupby(["year", "constructor_name"])["points"].mean().reset_index()
-
-fig_teams = px.scatter(df_teams_evolution, x="year", y="points", color="constructor_name",
-                       labels={"year": "Año", "points": "Puntos Promedio en Lluvia", "constructor_name": "Equipo"},
-                       title="🌧️ Evolución del Rendimiento en Lluvia por Equipo")
-
-st.plotly_chart(fig_teams, use_container_width=True, key="grafico_equipos_lluvia")
-
-
-# 📊 **Promedio de Diferencia de Posiciones por Año y Grid**
-st.subheader("📉 Evolución de la Diferencia de Posiciones Según la Posición de Largada")
-
-# Verificar si la columna existe antes de agrupar
-if "pos_dif" in df_evolution.columns:
-    df_grid_year = df_evolution.groupby(["year", "grid"])["pos_dif"].mean().reset_index()
-
-    fig_grid = px.line(df_grid_year, x="year", y="pos_dif", color="grid",
-                       labels={"year": "Año", "pos_dif": "Diferencia de Posiciones", "grid": "Posición de Largada"},
-                       title="📉 Promedio de Diferencia de Posiciones por Año y Posición de Largada")
-
-    st.plotly_chart(fig_grid, use_container_width=True, key="grafico_grid")
-else:
-    st.warning("⚠ No se pudo calcular la diferencia de posiciones porque la columna `pos_dif` no existe en los datos.")
-
-
-# 📊 **Evolución del Rendimiento de los Equipos en Lluvia**
-st.subheader("📈 ¿Qué Equipos han Mejorado en Lluvia con los Años?")
-
-df_teams_evolution = df_evolution[df_evolution["rainfall"] == True].groupby(["year", "constructor_name"])["points"].mean().reset_index()
-
-fig = px.scatter(df_teams_evolution, x="year", y="points", color="constructor_name",
-                 labels={"year": "Año", "points": "Puntos Promedio en Lluvia", "constructor_name": "Equipo"},
-                 title="🌧️ Evolución del Rendimiento en Lluvia por Equipo")
-
-st.plotly_chart(fig, use_container_width=True)
-
-# 📊 **Promedio de Diferencia de Posiciones por Año y Grid**
-st.subheader("📉 Evolución de la Diferencia de Posiciones Según la Posición de Largada")
-
-# Verificar si la columna existe antes de agrupar
-if "pos_dif" in df_evolution.columns:
-    df_grid_year = df_evolution.groupby(["year", "grid"])["pos_dif"].mean().reset_index()
-
-    fig = px.line(df_grid_year, x="year", y="pos_dif", color="grid",
-                  labels={"year": "Año", "pos_dif": "Diferencia de Posiciones", "grid": "Posición de Largada"},
-                  title="📉 Promedio de Diferencia de Posiciones por Año y Posición de Largada")
-
-    st.plotly_chart(fig, use_container_width=True)
-else:
-    st.warning("⚠ No se pudo calcular la diferencia de posiciones porque la columna `pos_dif` no existe en los datos.")
-
-
-
 ## 📊 **9. Evolución del Rendimiento de los Pilotos**
 st.subheader("📈 Evolución del Rendimiento de los Pilotos")
 st.markdown("🔹 **Este gráfico muestra cómo ha cambiado el rendimiento de los pilotos en cada temporada.**")
@@ -263,46 +194,37 @@ fig = px.line(df_pilots_evolution, x="year", y="points", color="driver_surname",
 st.plotly_chart(fig, use_container_width=True)
 
 
-## 📊 **10. Evolución del Impacto de la Posición de Salida**
-st.subheader("🚦 ¿Sigue Siendo Clave la Pole Position?")
-st.markdown("🔹 **Este gráfico muestra si los pilotos han perdido o ganado más posiciones a lo largo de los años.**")
-
-df_grid_year = df_evolution.groupby(["year", "grid"])["pos_dif"].mean().reset_index()
-
-fig = px.line(df_grid_year, x="year", y="pos_dif", color="grid",
-              labels={"year": "Año", "pos_dif": "Posiciones Ganadas/Pérdidas", "grid": "Posición de Salida"},
-              title="📊 Evolución del Impacto de la Posición de Salida",
-              markers=True)
-
-st.plotly_chart(fig, use_container_width=True)
 
 
 ## 📊 **11. Evolución del Rendimiento en Lluvia**
 st.subheader("🌧️ ¿Han Cambiado los Mejores Pilotos en Lluvia?")
 st.markdown("🔹 **Este gráfico muestra la evolución del rendimiento en lluvia de los pilotos a lo largo de los años.**")
 
-df_rain_year = df_evolution[df_filtered["rainfall"] == True].groupby(["year", "driver_surname"])["points"].mean().reset_index()
+df_rain_year = df_evolution[df_evolution["rainfall"] == True].groupby(["year", "driver_surname"])["points"].mean().reset_index()
 
 fig = px.line(df_rain_year, x="year", y="points", color="driver_surname",
               labels={"year": "Año", "points": "Puntos Promedio en Lluvia", "driver_surname": "Piloto"},
               title="📊 Evolución del Rendimiento en Lluvia",
               markers=True)
 
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, use_container_width=True, key="grafico_rendimiento_lluvia")
 
 
 ## 📊 **12. Evolución del Rendimiento de los Equipos en Lluvia**
 st.subheader("🌧️ ¿Qué Equipos han Mejorado en Lluvia con los Años?")
 st.markdown("🔹 **Este gráfico muestra la evolución del rendimiento de los equipos en lluvia a lo largo de los años.**")
 
-df_team_rain_year = df_evolution[df_filtered["rainfall"] == True].groupby(["year", "constructor_name"])["points"].mean().reset_index()
+df_team_rain_year = df_evolution[df_evolution["rainfall"] == True].groupby(["year", "constructor_name"])["points"].mean().reset_index()
 
 fig = px.line(df_team_rain_year, x="year", y="points", color="constructor_name",
               labels={"year": "Año", "points": "Puntos Promedio en Lluvia", "constructor_name": "Equipo"},
               title="📊 Evolución del Rendimiento en Lluvia por Equipo",
               markers=True)
 
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, use_container_width=True, key="grafico_equipos_lluvia")
+
+
+
 
 
 # ==============================
